@@ -17,7 +17,20 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r,warning=FALSE, message=FALSE,echo=FALSE}
+
+```{r, message=FALSE, warning=FALSE,echo=FALSE}
+packages.used=c("tm", "tidytext","tidyverse","DT","wordcloud","scales","gridExtra","ngram","igraph","ggraph","rsconnect")
+
+# check packages that need to be installed.
+packages.needed=setdiff(packages.used, 
+                        intersect(installed.packages()[,1], 
+                                  packages.used))
+# install additional packages
+if(length(packages.needed)>0){
+  install.packages(packages.needed, dependencies = TRUE)
+}
+
+# load packages
 library(tm)
 library(tidytext)
 library(tidyverse)
@@ -31,7 +44,11 @@ library(ggraph)
 library(rsconnect)
 ```
 
+This report is prepared with the following environmental settings.
 
+```{r}
+print(R.version)
+```
 
 ```{r read data, warning=FALSE, message=FALSE,echo=FALSE}
 urlfile<-'../data/cleaned_hm.csv'
