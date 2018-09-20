@@ -13,7 +13,7 @@ Term: Fall 2018
 + This project is conducted by Jiaqian Yu
 
 + Project summary: This report is a guidebook with selected Q&A aims at finding out the best way to make your mother happy. 
-First,I process the raw textual data 'cleaned_hm.csv' saved in data file by cleaning data, removing stopwords and creat a tidy version of texts which is saved in output file.Then,I combine the processed text with demographic information 'demographic.csv' saved in data file to generate the dataset for this report.
+First,I process the raw textual data 'cleaned_hm.csv' saved in data file by cleaning data, removing stopwords and creating a tidy version of texts which is saved in output file.Then,I combine the processed text with demographic information 'demographic.csv' saved in data file to generate the dataset for this report.
 
 + Three questions will be answered in this report are:
   1. Do mothers really regret giving birth to their kids? What about fathers?
