@@ -1,10 +1,7 @@
 ---
 title: 'Mom, wish you happy everyday! (A guidebook on how to make your mother happy) '
 output:
-  html_document:
-    fig_height: 3
-    fig_width: 5
-  pdf_document: default
+  html_document
 ---
 
 ![ ](../figs/lovemom.png)
@@ -12,7 +9,7 @@ output:
 #### This report is a guidebook with selected Q&A aims at finding out the best way to make your mother happy.
 
  
-#### The whole dataset: HappyDB is a corpus of 100,000 crowd-sourced happy moments via Amazon's Mechanical Turk. You can read more about it on https://arxiv.org/abs/1801.07746. But we only use a subset of this dataset to conduct data analysis in this report.
+#### The whole dataset: HappyDB is a corpus of 100,000 crowd-sourced happy moments via Amazon's Mechanical Turk. You can read more about it on https://arxiv.org/abs/1801.07746. But I only use a subset of this dataset to conduct data analysis in this report.
   
   
 ```{r, warning=FALSE, message=FALSE,echo=FALSE}
@@ -26,11 +23,18 @@ library(tidytext)
 library(tidyverse)
 library(DT)
 library(wordcloud)
+library(scales)
+library(gridExtra)
+library(ngram)
+library(igraph)
+library(ggraph)
+library(rsconnect)
 ```
 
 
+
 ```{r read data, warning=FALSE, message=FALSE,echo=FALSE}
-urlfile<-'https://raw.githubusercontent.com/rit-public/HappyDB/master/happydb/data/cleaned_hm.csv'
+urlfile<-'../data/cleaned_hm.csv'
 hm_data <- read_csv(urlfile)
 ```
 
@@ -63,7 +67,7 @@ dict <- tidy(corpus) %>%
 data("stop_words")
 
 word <- c("happy","ago","yesterday","lot","today","months","month",
-                 "happier","happiest","last","week","past")
+                 "happier","happiest","last","week","past","day","time")
 
 stop_words <- stop_words %>%
   bind_rows(mutate(tibble(word), lexicon = "updated"))
@@ -110,19 +114,9 @@ write_csv(hm_data, "../output/processed_moments.csv")
 
 ```
 
-```{r, warning=FALSE, message=FALSE,echo=FALSE}
-library(tidyverse)
-library(tidytext)
-library(DT)
-library(scales)
-library(wordcloud2)
-library(gridExtra)
-library(ngram)
-library(igraph)
-library(ggraph)
-library(rsconnect)
-```
+First,I process the raw textual data 'cleaned_hm.csv' saved in $ data $ file by cleaning data, removing stopwords and creating a tidy version of texts which is saved in $ output $ file.
 
+Then,I combine the processed text with demographic information 'demographic.csv' saved in $ data $ file to generate the dataset for this report.
 
 ```{r, message=FALSE,echo=FALSE}
 # Step 1 - Load the processed text data along with demographic information on contributors
@@ -130,7 +124,7 @@ library(rsconnect)
 # We use the processed data for our analysis and combine it with the demographic information available.
 hm_data <- read_csv("../output/processed_moments.csv")
 
-urlfile<-'https://raw.githubusercontent.com/rit-public/HappyDB/master/happydb/data/demographic.csv'
+urlfile<-'../data/demographic.csv'
 demo_data <- read_csv(urlfile)
 ```
 
@@ -165,12 +159,11 @@ hm_data <- hm_data %>%
 
 ## Question 1: Do mothers really regret giving birth to their kids? What about fathers?
 
-For me,to make my mother happy is a great challenge. I alwyas make my mother angry. (Instead, it seems that my father will never be mad at me)
-Sometimes my mother even say "I would rather not to give birth to you". I feel really sad after she said this to me.(Of course, my father never said this to me.) And this is a common sitaution among my friends. So my first question is: Do mothers really regret giving birth to their kids? What about fathers?
+For me,to make my mother happy is a great challenge. I alwyas make my mother angry. (Instead, it seems that my father will never be mad at me). Sometimes my mother even say "I would rather not to give birth to you". I feel really sad after she said this to me (Of course, my father never said this to me). And this is a common sitaution among my friends. So my first question is: Do mothers really regret giving birth to their kids? What about fathers?
 
 I try to answer this question by comparing the "happy moments" among females/males before becoming fathers/mothers and after becoming fathers/mothers. I hope to see if their happy moments change and if they can gain much happiness from kids.
 
-I define mothers/fathers as females/males with parenthood while regardless of their martial status.
+I define mothers/fathers as females/males with parenthood while regardless of their marital status.
 
 ```{r,echo=FALSE}
 hm_data_mother <- hm_data[hm_data$gender=="f" & hm_data$parenthood=="y",]
@@ -198,7 +191,7 @@ ggplot(temp,
              color = abs(colnames(temp)[3] - colnames(temp)[2])) +
       geom_abline(color = "gray40", lty = 2) +
       geom_jitter(alpha = 0.1, size = 1, width = 0.3, height = 0.3) +
-  labs(title="Words Proportion for females with/without parenthood")+
+  labs(title="               Words Proportion for females with/without parenthood")+
       geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
       scale_x_log10(labels = percent_format()) +
       scale_y_log10(labels = percent_format()) +
@@ -239,7 +232,7 @@ ggplot(temp,
       geom_abline(color = "gray40", lty = 2) +
       geom_jitter(alpha = 0.1, size = 1, width = 0.3, height = 0.3) +
       geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
-      labs(title="Words Proportion for males with/without parenthood")+
+      labs(title="               Words Proportion for males with/without parenthood")+
       scale_x_log10(labels = percent_format()) +
       scale_y_log10(labels = percent_format()) +
       scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
@@ -247,7 +240,7 @@ ggplot(temp,
   
 ```
 
-According to the two plots above, regardless of the parenthood, females/males will always mention the words "day","family","birthday" in their "happy moments". But for females/males with parenthood, the propotion of words related to their children such as "daughter","son","kids" are extremely high. 
+According to the two plots above, regardless of the parenthood, females/males will always mention the words "friend" and "birthday" in their "happy moments". But for females/males with parenthood, the propotion of words related to their children such as "daughter","son","kids" are extremely high. 
 After females/males become mothers/fathers, many more happy moments are related to their kids.
 
 Also, we could see the similar results from the separate word clouds.
@@ -264,12 +257,6 @@ bag_of_words_notmother <-  hm_data_notmother %>%
 
 word_count_notmother <- bag_of_words_notmother %>%
   count(word, sort = TRUE)
-
-# ignore the two useless words: time and day
-
-word_count_mother <-word_count_mother[-c(which(word_count_mother$word=="day"),which(word_count_mother$word=="time")),]
-
-word_count_notmother <-word_count_notmother[-c(which(word_count_notmother$word=="day"),which(word_count_notmother$word=="time")),]
 ```
 
 ```{r,message=FALSE,warning=FALSE,echo=FALSE}
@@ -298,7 +285,7 @@ wordcloud(word_count_notmother$word,word_count_notmother$n ,
 
 ```
 
-Ignore the two most frequent but "useless" words "time" and "day", the two words clouds show that females with parenthood mention "daughter","son","husbund" and "friend" a lot while females without parenthood only mention "friend" most in their happy moments.
+The two words clouds above show that females with parenthood mention "daughter","son","husbund" and "friend" a lot while females without parenthood only mention "friend" most in their happy moments.
 
 
 ```{r, warning=FALSE, message=FALSE,echo=FALSE}
@@ -313,12 +300,6 @@ bag_of_words_notfather <-  hm_data_notfather %>%
 
 word_count_notfather <- bag_of_words_notfather %>%
   count(word, sort = TRUE)
-
-# ignore the two useless words: time and day
-
-word_count_father <-word_count_father[-c(which(word_count_father$word=="day"),which(word_count_father$word=="time")),]
-
-word_count_notfather <-word_count_notfather[-c(which(word_count_notfather$word=="day"),which(word_count_notfather$word=="time")),]
 
 ```
 
@@ -348,7 +329,7 @@ wordcloud(word_count_notfather$word,word_count_notfather$n ,
 
 Similarly, the two words clouds above show that males with parenthood mention "daughter","son","wife" and "friend" a lot while males without parenthood mention "friend" most in their happy moments.
 
-But if we look at the words clouds for females/males with parenthood carefully, we can find out an interesting phenomenon that it seems mothers mention their kids more than their husbands and friends while fathers still mention friends more than their kids.
+But if we look at the words clouds for females/males with parenthood carefully, we can find out an interesting phenomenon that it seems mothers mention their kids more than their husbands and friends while fathers still mention friends most.
 
 This result can be shown more obviously by the words frequency bar charts below.
 
@@ -358,7 +339,7 @@ This result can be shown more obviously by the words frequency bar charts below.
       mutate(word = reorder(word, n)) %>%
       ggplot(aes(word, n)) +
       geom_col() +
-      labs(title = "Word Frequency in Happy Moments for mothers")+
+      labs(title = "               Word Frequency in Happy Moments for mothers")+
       xlab(NULL) +
       ylab("Word Frequency")+
       coord_flip()
@@ -368,7 +349,7 @@ This result can be shown more obviously by the words frequency bar charts below.
       mutate(word = reorder(word, n)) %>%
       ggplot(aes(word, n)) +
       geom_col() +
-      labs(title ="Word Frequency in Happy Moments for fathers")+
+      labs(title ="               Word Frequency in Happy Moments for fathers")+
       xlab(NULL) +
       ylab("Word Frequency")+
       coord_flip()
@@ -379,15 +360,13 @@ We can see the top two frequent words mentioned by mothers are "son" and "daught
 
 However, fathers mention "wife" and "friend" more frequently than "son" and "daughter" in their happy moments.
  
-#### Both mothers and fathers gain lots of happiness from their kids, so I don't think they regret giving birth to their kids. What is more, mothers mention "son" and "daughter" most frequently. So I think, mothers really enjoy having kids.
+#### Both mothers and fathers gain lots of happiness from their kids, so I don't think they regret giving birth to their kids. What is more, mothers mention "son" and "daughter" most frequently. So I think, mothers really enjoy a lot with kids.
 
 So when mothers said "I would rather not to give birth to you", that means they are very angry. They don't really feel regret for they always think about their kids when asked about the happy moments. 
 
 Mothers really love us, but why do they always be mad at us?
 
-I tried my best to make my mother happy but always in vain. What should I do? 
-
-Also,when I check the post on social media like Weibo or Youtube, I can always find out many hot videos including "how my mother is angry when I spend summer holiday at home","why my mother is so unhappy during Spring Festival". It looks like lots of kids face the same problem with me. So what should we do?
+I tried my best to make my mother happy but always in vain. What should I do? Also,when I check the post on social media like Weibo or Youtube, I can always find out many hot videos including "how my mother is angry when I spend summer holiday at home","why my mother is so unhappy during Spring Festival". It looks like lots of kids face the same problem with me. So what should we do?
  
  
 ## Question 2: How to make mothers happy?
@@ -398,7 +377,7 @@ I try to solve this question by looking at all the happy moments including words
 hm_data_motherchild <- hm_data_mother[grepl("baby",hm_data_mother$text)|grepl("child",hm_data_mother$text)|grepl("son",hm_data_mother$text)|grepl("daughter",hm_data_mother$text)|grepl("kid",hm_data_mother$text),]
 nrow(hm_data_motherchild)
 ```
-Among the 20722 happy moments created by mothers, 6257 happy moments are related to their kids.So, I try to find out the most frequent words in this subset of data. Similarly, I ignore the two words "day","time" and the words used to choose subset such as "child","daughter" and "son" and only count the frequency of the rest words.
+Among the 20722 happy moments created by mothers, 6257 happy moments are related to their kids.So, I try to find out the most frequent words in this subset of data. Here I ignore the words used to choose subset such as "child","daughter" and "son" and only count the frequency of the rest words.
 
 
 ```{r,warning=FALSE, message=FALSE,echo=FALSE}
@@ -409,7 +388,7 @@ bag_of_words_motherchild <-  hm_data_motherchild %>%
 word_count_motherchild <- bag_of_words_motherchild %>%
   count(word, sort = TRUE)
 
-word_count_motherchild<- word_count_motherchild[-c(which(word_count_motherchild$word=="day"),which(word_count_motherchild$word=="time"),which(word_count_motherchild$word=="baby"),which(word_count_motherchild$word=="child"),which(word_count_motherchild$word=="son"),which(word_count_motherchild$word=="daughter"),which(word_count_motherchild$word=="kid"),which(word_count_motherchild$word=="kids"),which(word_count_motherchild$word=="children")),]
+word_count_motherchild<- word_count_motherchild[-c(which(word_count_motherchild$word=="baby"),which(word_count_motherchild$word=="child"),which(word_count_motherchild$word=="son"),which(word_count_motherchild$word=="daughter"),which(word_count_motherchild$word=="kid"),which(word_count_motherchild$word=="kids"),which(word_count_motherchild$word=="children")),]
 
 word_count_motherchild[1:20,] %>%
       mutate(word = reorder(word, n)) %>%
@@ -459,7 +438,7 @@ bag_of_words_motherhusband <-  hm_data_motherhusband %>%
 word_count_motherhusband <- bag_of_words_motherhusband %>%
   count(word, sort = TRUE)
 
-word_count_motherhusband<- word_count_motherhusband[-c(which(word_count_motherhusband$word=="day"),which(word_count_motherhusband$word=="time"),which(word_count_motherhusband$word=="husband")),]
+word_count_motherhusband<- word_count_motherhusband[-c(which(word_count_motherhusband$word=="husband")),]
 
 word_count_motherhusband[1:20,] %>%
       mutate(word = reorder(word, n)) %>%
@@ -481,7 +460,7 @@ wordcloud(word_count_motherhusband$word,word_count_motherhusband$n ,
 
 From the word frequency bar chart and words clouds above, we can see the top 3 frequent words in happy moments related to "husband" are "home","dinner" and "surprise".
 
-#### That means, we should ask our fathers to spend more time at home, to cook dinner and to prepare surprise for mothers.
+#### That means, we may ask our fathers to spend more time at home, to cook dinner and to prepare surprise for mothers.
 
 Below are some examples of the happy moments related to "husband", "home","dinner" and "surprise" created by mothers. 
 
@@ -494,11 +473,11 @@ hm_data_motherhusband[grepl("surprise",hm_data_motherhusband$text),"original_hm"
 ![ ](../figs/motherhappy.jpg) 
 
 ## Conclusions
-1. Mothers and fathers really gain happiness from their kids. Mothers mention kids most frequently when recall their happy moments.(Fathers also gain happiness from kids, however, they still put "wife" and "friend" in the first place)
+1. Mothers and fathers really gain happiness from their kids. Mothers mention kids most frequently when they recall their happy moments(Fathers also gain happiness from kids, however, they still put "wife" and "friend" in the first place).
 
-2. Performing well in school makes mother happy.
+2. Performing well in school makes mothers happy.
 
-3. Ask father to spend time at home, make dinner and prepare surprise can also make mother happy.
+3. Ask fathers to spend time at home, make dinner and prepare surprise can also make mothers happy.
 
 
  
